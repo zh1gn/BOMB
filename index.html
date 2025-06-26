@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💣 ОБЕЗВРЕЖИВАНИЕ БОМБЫ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom styles to ensure full-screen effect and font */
+      body {
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        overflow: hidden; /* Hide scrollbars */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: black;
+        color: white;
+        /* Prevents text selection for a cleaner game feel */
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+
+      /* Ensure game container takes available space and centers content */
+      #game-container {
+        text-align: center;
+        padding: 2.5rem; /* Equivalent to pady=40px for outer padding */
+        background-color: black;
+        width: 90%;
+        max-width: 800px;
+        box-sizing: border-box; /* Include padding in width */
+        border-radius: 1rem; /* Rounded corners for the main container */
+      }
+
+      /* Specific font sizes and colors from Python app */
+      .time-font {
+        font-size: 4rem; /* Adjusted for better web view */
+        font-weight: bold;
+        color: #ef4444; /* Red */
+      }
+
+      .label-font {
+        font-size: 1.25rem; /* Adjusted for better web view */
+        font-weight: bold;
+      }
+
+      .input-font {
+        font-size: 1.75rem; /* Adjusted for better web view */
+        font-weight: bold;
+      }
+
+      /* Input field specific styles */
+      input[type="text"] {
+        border-radius: 0.5rem; /* Rounded corners for inputs */
+        padding: 0.75rem 1rem;
+        outline: none;
+        text-align: center;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+        transition: border-color 0.2s;
+      }
+
+      input[type="text"]:focus {
+        border-color: #60a5fa; /* Blue focus ring */
+      }
+
+      /* Button specific styles */
+      button {
+        border-radius: 0.75rem; /* Rounded corners for buttons */
+        padding: 0.75rem 1.5rem;
+        transition: background-color 0.2s, transform 0.1s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      button:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Phase specific adjustments */
+      .game-phase {
+        display: none;
+      }
+
+      .game-phase.active {
+        display: flex; /* Use flex for centering content within phase */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Modal specific styles */
+      #custom-modal {
+        transition: opacity 0.3s ease-in-out;
+      }
+      #custom-modal.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #custom-modal.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div
+      id="game-container"
+      class="flex flex-col items-center justify-center min-h-screen w-full bg-black text-white rounded-xl shadow-lg p-10"
+    >
+      <!-- Removed H1 title label -->
+
+      <!-- Plant Phase -->
+      <div id="plant-phase" class="game-phase active w-full">
+        <p
+          id="instruction-label"
+          class="label-font text-yellow-400 mb-8 text-center leading-relaxed"
+        ></p>
+        <input
+          type="text"
+          id="plant-code-entry"
+          maxlength="6"
+          placeholder="Введите код"
+          class="input-font w-full max-w-xs bg-red-800 text-white border-2 border-red-700 focus:border-blue-500 rounded-lg shadow-inner mb-2"
+        />
+        <!-- Masked display for plant phase input (shows stars) -->
+        <div
+          id="plant-masked-code-display"
+          class="input-font text-white mb-6 tracking-widest"
+        >
+          ------
+        </div>
+        <button
+          id="plant-button"
+          class="label-font bg-red-700 hover:bg-red-600 text-white py-3 px-8 rounded-xl shadow-lg transition-all duration-200 ease-in-out w-full max-w-xs"
+        >
+          💣 УСТАНОВИТЬ БОМБУ
+        </button>
+      </div>
+
+      <!-- Countdown Phase -->
+      <div id="countdown-phase" class="game-phase w-full">
+        <h2 id="status-label" class="text-3xl font-bold text-red-500 mb-6">
+          💣 БОМБА АКТИВИРОВАНА 💣
+        </h2>
+        <div id="timer-label" class="time-font mb-8 text-red-500">10:00</div>
+
+        <div id="defuse-section" class="flex flex-col items-center w-full">
+          <p
+            id="defuse-instruction-label"
+            class="label-font text-green-500 mb-4"
+          >
+            🔐 ВВЕДИТЕ КОД ДЛЯ ОБЕЗВРЕЖИВАНИЯ:
+          </p>
+          <!-- Code input field (shows digits) -->
+          <input
+            type="text"
+            id="defuse-code-entry"
+            maxlength="6"
+            placeholder="Введите код"
+            class="input-font w-full max-w-xs bg-green-800 text-white border-2 border-green-700 focus:border-blue-500 rounded-lg shadow-inner mb-2"
+          />
+          <!-- Display for masked input (shows stars) -->
+          <div
+            id="masked-code-display"
+            class="input-font text-white mb-6 tracking-widest"
+          ></div>
+
+          <button
+            id="defuse-button"
+            class="label-font bg-green-700 hover:bg-green-600 text-white py-3 px-8 rounded-xl shadow-lg transition-all duration-200 ease-in-out w-full max-w-xs"
+          >
+            🔐 ОБЕЗВРЕДИТЬ
+          </button>
+          <div
+            id="result-label"
+            class="label-font text-orange-400 mt-6 text-left w-full max-w-xs leading-tight whitespace-pre-wrap"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Result Phase -->
+      <div id="result-phase" class="game-phase w-full">
+        <h2 id="final-status-label" class="text-3xl font-bold mb-8"></h2>
+        <p
+          id="final-info-label"
+          class="label-font text-white mb-10 text-center leading-relaxed"
+        ></p>
+        <button
+          id="restart-button"
+          class="label-font bg-blue-700 hover:bg-blue-600 text-white py-3 px-8 rounded-xl shadow-lg transition-all duration-200 ease-in-out w-full max-w-xs"
+        >
+          🔄 ЗАНОВО
+        </button>
+      </div>
+    </div>
+
+    <!-- Custom Modal for Alerts/Warnings -->
+    <div
+      id="custom-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out"
+    >
+      <div
+        class="bg-gray-900 p-8 rounded-xl shadow-2xl max-w-md w-full mx-4 text-center border-2 border-red-600 transform scale-95 transition-transform duration-300 ease-in-out"
+      >
+        <h3 id="modal-title" class="text-3xl font-bold mb-4 text-red-500"></h3>
+        <p
+          id="modal-message"
+          class="text-xl text-gray-200 mb-8 leading-relaxed"
+        ></p>
+        <button
+          id="modal-close-button"
+          class="bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-75 shadow-lg"
+        >
+          ОК
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Use the Web Audio API for sound generation to mimic winsound.Beep
+      const audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
+
+      // --- Sound Functions ---
+      function playSound(type, freq = null, duration = null) {
+        function soundThread() {
+          try {
+            if (type === "success") {
+              const frequencies = [523, 659, 784, 1047]; // C5, E5, G5, C6
+              let delay = 0;
+              frequencies.forEach((f) => {
+                setTimeout(() => playBeep(f, 150), delay); // Slightly faster beeps
+                delay += 180;
+              });
+            } else if (type === "explosion") {
+              for (let i = 0; i < 10; i++) {
+                // Descending frequency, slightly more aggressive
+                setTimeout(() => playBeep(250 - i * 20, 80), i * 80);
+              }
+            } else if (freq && duration) {
+              playBeep(freq, duration);
+            }
+          } catch (e) {
+            console.error("Error playing sound:", e);
+          }
+        }
+        // Use setTimeout to simulate threading for sounds, avoiding blocking main thread
+        setTimeout(soundThread, 0);
+      }
+
+      function playBeep(freq, duration) {
+        if (!audioContext) return;
+
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = "sine"; // Sine wave for a clear beep
+        oscillator.frequency.value = freq; // Frequency in Hz
+
+        // Start with zero gain to avoid click, ramp up, then down
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(
+          0.5,
+          audioContext.currentTime + 0.01
+        ); // Quick attack
+        gainNode.gain.linearRampToValueAtTime(
+          0.0,
+          audioContext.currentTime + duration / 1000 - 0.05
+        ); // Decay
+        gainNode.gain.linearRampToValueAtTime(
+          0,
+          audioContext.currentTime + duration / 1000
+        ); // Release
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration / 1000); // Stop after duration
+      }
+
+      // --- Game Variables ---
+      const CODE_LENGTH = 6;
+      let secretCode = null;
+      let timeLeft = 600; // 10 minutes in seconds
+      let timerInterval = null;
+      let isDefused = false;
+      let phase = "plant"; // "plant", "defuse", "result"
+
+      // --- DOM Elements ---
+      const plantPhase = document.getElementById("plant-phase");
+      const instructionLabel = document.getElementById("instruction-label");
+      const plantCodeEntry = document.getElementById("plant-code-entry");
+      const plantMaskedCodeDisplay = document.getElementById(
+        "plant-masked-code-display"
+      ); // Masked display for plant phase
+      const plantButton = document.getElementById("plant-button");
+
+      const countdownPhase = document.getElementById("countdown-phase");
+      const statusLabel = document.getElementById("status-label");
+      const timerLabel = document.getElementById("timer-label");
+      const defuseSection = document.getElementById("defuse-section");
+      const defuseInstructionLabel = document.getElementById(
+        "defuse-instruction-label"
+      );
+      const defuseCodeEntry = document.getElementById("defuse-code-entry");
+      const maskedCodeDisplay = document.getElementById("masked-code-display"); // Masked display for defuse phase
+      const defuseButton = document.getElementById("defuse-button");
+      const resultLabel = document.getElementById("result-label");
+
+      const resultPhase = document.getElementById("result-phase");
+      const finalStatusLabel = document.getElementById("final-status-label");
+      const finalInfoLabel = document.getElementById("final-info-label");
+      const restartButton = document.getElementById("restart-button");
+
+      // Modal Elements
+      const customModal = document.getElementById("custom-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const modalMessage = document.getElementById("modal-message");
+      const modalCloseButton = document.getElementById("modal-close-button");
+
+      // --- UI Utility Functions ---
+      function showPhase(targetPhase) {
+        plantPhase.classList.remove("active");
+        countdownPhase.classList.remove("active");
+        resultPhase.classList.remove("active");
+
+        if (targetPhase === "plant") {
+          plantPhase.classList.add("active");
+          plantCodeEntry.focus(); // Focus on the plant code entry
+          plantCodeEntry.value = ""; // Clear input field
+          updatePlantMaskedCodeDisplay(); // Update masked display
+        } else if (targetPhase === "defuse") {
+          countdownPhase.classList.add("active");
+          defuseCodeEntry.focus();
+          defuseCodeEntry.value = ""; // Clear input field
+          updateDefuseMaskedCodeDisplay(); // Update masked display
+        } else if (targetPhase === "result") {
+          resultPhase.classList.add("active");
+        }
+        phase = targetPhase;
+      }
+
+      function updateTimerDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerLabel.textContent = `${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+        if (timeLeft <= 30) {
+          // Blink effect by changing color every second
+          timerLabel.style.color = timeLeft % 2 === 0 ? "red" : "#880808"; // Dark red
+        } else {
+          timerLabel.style.color = "red";
+        }
+      }
+
+      function showModal(title, message, type = "error", onConfirm = null) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+
+        // Adjust border color based on message type
+        if (type === "error") {
+          customModal
+            .querySelector("div")
+            .classList.remove("border-yellow-600");
+          customModal.querySelector("div").classList.add("border-red-600");
+          modalTitle.classList.remove("text-yellow-500");
+          modalTitle.classList.add("text-red-500");
+        } else if (type === "warning") {
+          customModal.querySelector("div").classList.remove("border-red-600");
+          customModal.querySelector("div").classList.add("border-yellow-600");
+          modalTitle.classList.remove("text-red-500");
+          modalTitle.classList.add("text-yellow-500");
+        }
+
+        customModal.classList.remove("hidden");
+        customModal.classList.add("visible");
+        customModal.querySelector("div").classList.remove("scale-95");
+        customModal.querySelector("div").classList.add("scale-100");
+
+        // Set up button click handler
+        modalCloseButton.onclick = () => {
+          hideModal();
+          if (onConfirm) onConfirm();
+        };
+      }
+
+      function hideModal() {
+        customModal.classList.remove("visible");
+        customModal.classList.add("hidden");
+        customModal.querySelector("div").classList.remove("scale-100");
+        customModal.querySelector("div").classList.add("scale-95");
+      }
+
+      // --- Masked Input Display Functions ---
+      // For plant phase: input shows digits, display shows stars
+      function updatePlantMaskedCodeDisplay() {
+        const inputValue = plantCodeEntry.value; // Get actual digits from the input field
+        // Only allow digits in the input field
+        plantCodeEntry.value = inputValue.replace(/\D/g, "");
+        const filteredValue = plantCodeEntry.value;
+
+        // Update the masked display
+        plantMaskedCodeDisplay.textContent =
+          "*".repeat(filteredValue.length) +
+          "-".repeat(CODE_LENGTH - filteredValue.length);
+
+        // Automatically attempt to plant if the code is fully typed
+        if (filteredValue.length === CODE_LENGTH) {
+          plantBomb();
+        }
+      }
+
+      // For defuse phase: input shows digits, display shows stars
+      function updateDefuseMaskedCodeDisplay() {
+        const inputValue = defuseCodeEntry.value; // Get actual digits from the input field
+        // Only allow digits in the input field
+        defuseCodeEntry.value = inputValue.replace(/\D/g, "");
+        const filteredValue = defuseCodeEntry.value;
+
+        // Update the masked display
+        maskedCodeDisplay.textContent =
+          "*".repeat(filteredValue.length) +
+          "-".repeat(CODE_LENGTH - filteredValue.length);
+
+        // Automatically attempt defuse when full code typed
+        if (filteredValue.length === CODE_LENGTH) {
+          attemptDefuse();
+        }
+      }
+
+      // --- Game Logic Functions ---
+      function plantBomb() {
+        const code = plantCodeEntry.value.trim(); // Get the code directly from the input field
+
+        if (code.length !== CODE_LENGTH || !/^\d+$/.test(code)) {
+          showModal("Ошибка", `Код должен состоять из ${CODE_LENGTH} цифр!`);
+          plantCodeEntry.value = ""; // Reset input field on error
+          updatePlantMaskedCodeDisplay(); // Update display
+          return;
+        }
+        secretCode = code;
+        setupCountdownPhase();
+      }
+
+      function setupCountdownPhase() {
+        showPhase("defuse");
+        statusLabel.textContent = "💣 БОМБА АКТИВИРОВАНА 💣";
+        defuseInstructionLabel.textContent =
+          "🔐 ВВЕДИТЕ КОД ДЛЯ ОБЕЗВРЕЖИВАНИЯ:";
+        resultLabel.textContent = ""; // Clear previous results
+        console.log(`Секретный код: ${secretCode}`); // For debugging
+
+        // Start timer if not already running
+        if (!timerInterval) {
+          timerInterval = setInterval(() => {
+            if (isDefused) {
+              // Stop timer if defused
+              clearInterval(timerInterval);
+              timerInterval = null;
+              return;
+            }
+
+            timeLeft--;
+            updateTimerDisplay();
+
+            if (timeLeft <= 0) {
+              clearInterval(timerInterval);
+              timerInterval = null;
+              explodeBomb();
+            } else if (timeLeft % 10 === 0) {
+              playSound(null, 800, 200); // Beep sound
+            }
+          }, 1000);
+        }
+      }
+
+      function attemptDefuse() {
+        if (phase !== "defuse" || !timerInterval) {
+          return; // Do nothing if not in defuse phase or timer not running
+        }
+
+        const code = defuseCodeEntry.value.trim(); // Get the code directly from the input field
+        defuseCodeEntry.value = ""; // Reset input field for next attempt immediately
+        updateDefuseMaskedCodeDisplay(); // Update display after reset
+
+        if (code.length !== CODE_LENGTH || !/^\d+$/.test(code)) {
+          resultLabel.style.color = "red";
+          resultLabel.textContent = `❌ Код должен состоять из ${CODE_LENGTH} цифр!`;
+          return;
+        }
+
+        if (code === secretCode) {
+          defuseSuccess();
+        } else {
+          let feedbackLines = [];
+          for (let i = 0; i < CODE_LENGTH; i++) {
+            // Check if current code index is valid and matches secret code
+            if (i < code.length && code[i] === secretCode[i]) {
+              feedbackLines.push(`Цифра ${i + 1}: ✔️ Правильно`);
+            } else {
+              feedbackLines.push(`Цифра ${i + 1}: ❌ Неправильно`);
+            }
+          }
+          resultLabel.style.color = "orange";
+          resultLabel.textContent = feedbackLines.join("\n");
+        }
+      }
+
+      function defuseSuccess() {
+        isDefused = true;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        playSound("success");
+
+        finalStatusLabel.textContent = "🎉 БОМБА ОБЕЗВРЕЖЕНА! 🎉";
+        finalStatusLabel.style.color = "green";
+        finalInfoLabel.innerHTML = `✅ Код: ${secretCode}<br>⏰ Оставшееся время: ${Math.floor(
+          timeLeft / 60
+        )
+          .toString()
+          .padStart(2, "0")}:${(timeLeft % 60).toString().padStart(2, "0")}`;
+        showPhase("result");
+      }
+
+      function explodeBomb() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        playSound("explosion");
+
+        finalStatusLabel.textContent = "💥 ВЗРЫВ! 💥";
+        finalStatusLabel.style.color = "red";
+        finalInfoLabel.innerHTML = `💀 ВРЕМЯ ВЫШЛО!<br>🔐 Код был: ${secretCode}`;
+        showPhase("result");
+      }
+
+      function restartGame() {
+        secretCode = null;
+        timeLeft = 600; // 10 minutes
+        isDefused = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+
+        // Reset input values and masked displays
+        plantCodeEntry.value = "";
+        plantMaskedCodeDisplay.textContent = "-".repeat(CODE_LENGTH);
+
+        defuseCodeEntry.value = "";
+        maskedCodeDisplay.textContent = "-".repeat(CODE_LENGTH); // Reset masked display to empty
+
+        resultLabel.textContent = "";
+        // Update instruction for plant phase
+        instructionLabel.textContent = `УСТАНОВКА БОМБЫ\n\nВведите ${CODE_LENGTH}-значный код:`;
+        updateTimerDisplay(); // Reset timer display to 10:00
+        showPhase("plant");
+      }
+
+      // --- Event Listeners ---
+      document.addEventListener("DOMContentLoaded", () => {
+        // Initial setup for plant phase
+        instructionLabel.textContent = `УСТАНОВКА БОМБЫ\n\nВведите ${CODE_LENGTH}-значный код:`;
+        updateTimerDisplay(); // Display initial 10:00
+        plantMaskedCodeDisplay.textContent = "-".repeat(CODE_LENGTH); // Initialize masked plant display
+        maskedCodeDisplay.textContent = "-".repeat(CODE_LENGTH); // Initialize masked defuse display
+
+        plantButton.addEventListener("click", plantBomb);
+        // Listen for input changes to update the masked display for plant phase
+        plantCodeEntry.addEventListener("input", updatePlantMaskedCodeDisplay);
+        // Ensure only digits are allowed in plant code entry
+        plantCodeEntry.addEventListener("keydown", (e) => {
+          if (
+            !/^\d$/.test(e.key) &&
+            e.key !== "Backspace" &&
+            e.key !== "Delete" &&
+            e.key !== "ArrowLeft" &&
+            e.key !== "ArrowRight" &&
+            e.key !== "Tab"
+          ) {
+            e.preventDefault();
+          }
+        });
+
+        defuseButton.addEventListener("click", attemptDefuse);
+        // Listen for input changes to update the masked display for defuse phase
+        defuseCodeEntry.addEventListener(
+          "input",
+          updateDefuseMaskedCodeDisplay
+        );
+        // Ensure only digits are allowed in defuse code entry
+        defuseCodeEntry.addEventListener("keydown", (e) => {
+          if (
+            !/^\d$/.test(e.key) &&
+            e.key !== "Backspace" &&
+            e.key !== "Delete" &&
+            e.key !== "ArrowLeft" &&
+            e.key !== "ArrowRight" &&
+            e.key !== "Tab"
+          ) {
+            e.preventDefault();
+          }
+        });
+
+        restartButton.addEventListener("click", restartGame);
+
+        // Handle Escape key (for fullscreen exit warning)
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            if (timerInterval) {
+              // If timer is running
+              showModal(
+                "СТОП!",
+                "Вы не можете выйти, пока таймер активен!",
+                "warning"
+              );
+              e.preventDefault(); // Try to prevent default browser behavior (may not always work)
+            }
+          }
+        });
+
+        // Prevent default form submission on enter (if any implicit form exists)
+        document.querySelectorAll('input[type="text"]').forEach((input) => {
+          input.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+              event.preventDefault(); // Prevent accidental form submission
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
